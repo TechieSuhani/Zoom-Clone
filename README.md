@@ -126,5 +126,4 @@ Full Stack Developer passionate about building scalable web applications and rea
 
 ---
 
-Ye README tumhare project ke screenshots aur features ke hisaab se kaafi professional lagega GitHub par. 🚀
-er passionate about building scalable web applications and real-time communication platforms.
+
