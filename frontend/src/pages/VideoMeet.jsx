@@ -68,7 +68,7 @@ export default function VideoMeetComponent() {
         console.log("HELLO")
         getPermissions();
 
-    })
+    },[]);
 
     let getDislayMedia = () => {
         if (screen) {
@@ -248,28 +248,102 @@ export default function VideoMeetComponent() {
         })
     }
 
+    // let gotMessageFromServer = (fromId, message) => {
+    //     var signal = JSON.parse(message)
+
+    //     if (fromId !== socketIdRef.current) {
+    //         if (signal.sdp) {
+    //             connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
+    //                 if (signal.sdp.type === 'offer') {
+    //                     connections[fromId].createAnswer().then((description) => {
+    //                         connections[fromId].setLocalDescription(description).then(() => {
+    //                             socketRef.current.emit('signal', fromId, JSON.stringify({ 'sdp': connections[fromId].localDescription }))
+    //                         }).catch(e => console.log(e))
+    //                     }).catch(e => console.log(e))
+    //                 }
+    //             }).catch(e => console.log(e))
+    //         }
+
+    //         if (signal.ice) {
+    //             connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice)).catch(e => console.log(e))
+    //         }
+    //     }
+    // }
+
+
     let gotMessageFromServer = (fromId, message) => {
-        var signal = JSON.parse(message)
+    var signal = JSON.parse(message);
 
-        if (fromId !== socketIdRef.current) {
-            if (signal.sdp) {
-                connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
-                    if (signal.sdp.type === 'offer') {
-                        connections[fromId].createAnswer().then((description) => {
-                            connections[fromId].setLocalDescription(description).then(() => {
-                                socketRef.current.emit('signal', fromId, JSON.stringify({ 'sdp': connections[fromId].localDescription }))
-                            }).catch(e => console.log(e))
-                        }).catch(e => console.log(e))
-                    }
-                }).catch(e => console.log(e))
-            }
+    // Connection exist nahi karti to create karo
+    if (!connections[fromId]) {
+        console.log("Creating missing connection:", fromId);
 
-            if (signal.ice) {
-                connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice)).catch(e => console.log(e))
+        connections[fromId] =
+            new RTCPeerConnection(peerConfigConnections);
+
+        connections[fromId].onicecandidate = function (event) {
+            if (event.candidate != null) {
+                socketRef.current.emit(
+                    'signal',
+                    fromId,
+                    JSON.stringify({ ice: event.candidate })
+                );
             }
+        };
+
+        if (window.localStream) {
+            connections[fromId].addStream(window.localStream);
         }
     }
 
+    if (fromId !== socketIdRef.current) {
+
+        if (signal.sdp) {
+            connections[fromId]
+                .setRemoteDescription(
+                    new RTCSessionDescription(signal.sdp)
+                )
+                .then(() => {
+
+                    if (signal.sdp.type === "offer") {
+
+                        connections[fromId]
+                            .createAnswer()
+                            .then((description) => {
+
+                                connections[fromId]
+                                    .setLocalDescription(description)
+                                    .then(() => {
+
+                                        socketRef.current.emit(
+                                            "signal",
+                                            fromId,
+                                            JSON.stringify({
+                                                sdp: connections[fromId].localDescription
+                                            })
+                                        );
+
+                                    })
+                                    .catch(e => console.log(e));
+
+                            })
+                            .catch(e => console.log(e));
+
+                    }
+
+                })
+                .catch(e => console.log(e));
+        }
+
+        if (signal.ice) {
+            connections[fromId]
+                .addIceCandidate(
+                    new RTCIceCandidate(signal.ice)
+                )
+                .catch(e => console.log(e));
+        }
+    }
+}
 
 
 
